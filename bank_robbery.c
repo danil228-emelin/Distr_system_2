@@ -9,13 +9,12 @@
 
  #include "banking.h"
  #include "ipc.h"
- #include "common.h"
  #include "pa2345.h"
  #include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
- 
+ #include <stdio.h>
+ #include <string.h>
+ #include <stdio.h>
+
  // Структура для хранения состояния процесса
  typedef struct {
      local_id id;
@@ -33,6 +32,7 @@
      order.s_src = src;
      order.s_dst = dst;
      order.s_amount = amount;
+     
      // Создаем сообщение
      Message msg;
      msg.s_header.s_magic = MESSAGE_MAGIC;
@@ -178,80 +178,80 @@
      printf(log_done_fmt, get_physical_time(), data->id, data->balance);
  }
  
- int main(int argc, char * argv[])
-{
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s -p N balance1 balance2 ... balanceN\n", argv[0]);
-        return 1;
-    }
-    
-    int num_children = atoi(argv[2]);
-    if (argc != 3 + num_children) {
-        fprintf(stderr, "Invalid number of balance arguments\n");
-        return 1;
-    }
-    
-    // Инициализация структур данных
-    ProcessData parent_data;
-    parent_data.id = PARENT_ID;
-    parent_data.max_id = num_children;
-    
-    // Создание pipe'ов и дочерних процессов
-    // ... (код из первой лабораторной работы)
-    
-    // Родительский процесс
-    if (getpid() == getppid()) {
-        // Ждем STARTED от всех дочерних процессов
-        int started_count = 0;
-        Message msg;
-        while (started_count < num_children) {
-            if (receive_any(&parent_data, &msg) == 0) {
-                if (msg.s_header.s_type == STARTED) {
-                    started_count++;
-                }
-            }
-        }
-        
-        // Выполняем переводы
-        bank_robbery(&parent_data, num_children);
-        
-        // Отправляем STOP всем дочерним процессам
-        Message stop_msg;
-        stop_msg.s_header.s_magic = MESSAGE_MAGIC;
-        stop_msg.s_header.s_type = STOP;
-        stop_msg.s_header.s_payload_len = 0;
-        stop_msg.s_header.s_local_time = get_physical_time();
-        
-        send_multicast(&parent_data, &stop_msg);
-        
-        // Собираем истории балансов
-        AllHistory all_history;
-        all_history.s_history_len = num_children;
-        
-        int history_count = 0;
-        while (history_count < num_children) {
-            Message history_msg;
-            if (receive_any(&parent_data, &history_msg) == 0) {
-                if (history_msg.s_header.s_type == BALANCE_HISTORY) {
-                    BalanceHistory *bh = (BalanceHistory *)history_msg.s_payload;
-                    all_history.s_history[history_count] = *bh;
-                    history_count++;
-                }
-            }
-        }
-        
-        // Выводим историю
-        print_history(&all_history);
-        
-        // Ждем завершения дочерних процессов
-        // ... (код из первой лабораторной работы)
-    }
-    // Дочерние процессы
-    else {
-        local_id child_id = parent_data.id;
-        balance_t initial_balance = atoi(argv[3 + child_id - 1]);
-        child_process(&parent_data, initial_balance);
-    }
-    
-    return 0;
-}
+ int main(int argc, char *argv[]) {
+     // Парсинг аргументов
+     if (argc < 4) {
+         fprintf(stderr, "Usage: %s -p N balance1 balance2 ... balanceN\n", argv[0]);
+         return 1;
+     }
+     
+     int num_children = atoi(argv[2]);
+     if (argc != 3 + num_children) {
+         fprintf(stderr, "Invalid number of balance arguments\n");
+         return 1;
+     }
+     
+     // Инициализация структур данных
+     ProcessData parent_data;
+     parent_data.id = PARENT_ID;
+     parent_data.max_id = num_children;
+     
+     // Создание pipe'ов и дочерних процессов
+     // ... (код из первой лабораторной работы)
+     
+     // Родительский процесс
+     if (getpid() == /* parent pid */) {
+         // Ждем STARTED от всех дочерних процессов
+         int started_count = 0;
+         Message msg;
+         while (started_count < num_children) {
+             if (receive_any(&parent_data, &msg) == 0) {
+                 if (msg.s_header.s_type == STARTED) {
+                     started_count++;
+                 }
+             }
+         }
+         
+         // Выполняем переводы
+         bank_robbery(&parent_data, num_children);
+         
+         // Отправляем STOP всем дочерним процессам
+         Message stop_msg;
+         stop_msg.s_header.s_magic = MESSAGE_MAGIC;
+         stop_msg.s_header.s_type = STOP;
+         stop_msg.s_header.s_payload_len = 0;
+         stop_msg.s_header.s_local_time = get_physical_time();
+         
+         send_multicast(&parent_data, &stop_msg);
+         
+         // Собираем истории балансов
+         AllHistory all_history;
+         all_history.s_history_len = num_children;
+         
+         int history_count = 0;
+         while (history_count < num_children) {
+             Message history_msg;
+             if (receive_any(&parent_data, &history_msg) == 0) {
+                 if (history_msg.s_header.s_type == BALANCE_HISTORY) {
+                     BalanceHistory *bh = (BalanceHistory *)history_msg.s_payload;
+                     all_history.s_history[history_count] = *bh;
+                     history_count++;
+                 }
+             }
+         }
+         
+         // Выводим историю
+         print_history(&all_history);
+         
+         // Ждем завершения дочерних процессов
+         // ... (код из первой лабораторной работы)
+     }
+     // Дочерние процессы
+     else {
+         local_id child_id = /* определить ID процесса */;
+         balance_t initial_balance = atoi(argv[3 + child_id - 1]);
+         child_process(&parent_data, initial_balance);
+     }
+     
+     return 0;
+ }
