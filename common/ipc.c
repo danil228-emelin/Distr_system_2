@@ -25,9 +25,6 @@ typedef struct {
 } IPC;
 
 
-int get_physical_time(void) {
-    return 0;
-}
 
 void log_event(FILE *events_log, const char *format, ...) {
     va_list args;
@@ -335,83 +332,4 @@ void child_process(local_id id, int process_count, int pipes[][MAX_PROCESS_ID + 
     
     cleanup_ipc(ipc);
     exit(EXIT_SUCCESS);
-}
-
-
-int main(int argc, char *argv[]) {
-    int child_count = 0;
-    
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
-            child_count = atoi(argv[i + 1]);
-            if (child_count <= 0 || child_count > MAX_PROCESS_ID) {
-                fprintf(stderr, "Invalid process count: %d\n", child_count);
-                return EXIT_FAILURE;
-            }
-            break;
-        }
-    }
-    
-    if (child_count == 0) {
-        fprintf(stderr, "Usage: %s -p X\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-    
-    int total_processes = child_count + 1;
-    
-    // Создаем массив для хранения пайпов
-    int pipes[MAX_PROCESS_ID + 1][MAX_PROCESS_ID + 1][2];
-    
-    // Создаем все пайпы ОДИН РАЗ в родительском процессе
-    create_all_pipes(total_processes, pipes);
-    
-    // Создаем IPC для родительского процесса
-    IPC *ipc = init_ipc_with_pipes(PARENT_ID, total_processes, pipes);
-    if (!ipc) {
-        fprintf(stderr, "Failed to create IPC\n");
-        return EXIT_FAILURE;
-    }
-    close_unused_pipes(ipc);
-
-    
-    // Логируем информацию о пайпах
-    log_pipes_info(ipc);
-
-
-    // Создаем дочерние процессы
-    for (local_id i = 1; i < total_processes; i++) {
-        pid_t pid = fork();
-        if (pid == 0) {
-            // Дочерний процесс - наследует все открытые файловые дескрипторы
-            child_process(i, total_processes, pipes);
-        } else if (pid < 0) {
-            perror("fork");
-            cleanup_ipc(ipc);
-            return EXIT_FAILURE;
-        }
-    }
-    
-    // Родитель ждет STARTED и DONE от всех дочерних процессов
-    Message msg;
-    int received_started = 0;
-    int received_done = 0;
-    
-    while (received_started < child_count || received_done < child_count) {
-        if (receive_any(ipc, &msg) == 0) {
-            if (msg.s_header.s_type == STARTED) {
-                received_started++;
-            } else if (msg.s_header.s_type == DONE) {
-                received_done++;
-            }
-        }
-    }
-    
-    // Ждем завершения всех дочерних процессов
-    for (int i = 0; i < child_count; i++) {
-        int status;
-        wait(&status);
-    }
-    
-    cleanup_ipc(ipc);
-    return EXIT_SUCCESS;
 }

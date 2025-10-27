@@ -25,6 +25,8 @@
      int max_id;
  } ProcessData;
  
+
+ 
  void transfer(void *parent_data, local_id src, local_id dst, balance_t amount) {
      ProcessData *data = (ProcessData *)parent_data;
      
@@ -54,6 +56,17 @@
          }
      }
  }
+
+ void bank_robbery(void * parent_data, local_id max_id)
+{
+    for (int i = 1; i < max_id; ++i) {
+        transfer(parent_data, i, i + 1, i);
+    }
+    if (max_id > 1) {
+        transfer(parent_data, max_id, 1, 1);
+    }
+}
+
  
  // Функция для обработки сообщений в дочерних процессах
  void child_process(ProcessData *data, balance_t initial_balance) {
