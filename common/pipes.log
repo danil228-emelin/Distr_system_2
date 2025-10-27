@@ -1,0 +1,9 @@
+=== Pipe descriptors for Process 0 ===
+Pipe[0][1]: read_fd=-1, write_fd=4 (CLOSED)
+Pipe[0][2]: read_fd=-1, write_fd=6 (CLOSED)
+Pipe[1][0]: read_fd=7, write_fd=-1 (CLOSED)
+Pipe[1][2]: read_fd=-1, write_fd=-1 (CLOSED)
+Pipe[2][0]: read_fd=11, write_fd=-1 (CLOSED)
+Pipe[2][1]: read_fd=-1, write_fd=-1 (CLOSED)
+========================================
+
